@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>認知課題バッテリー</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B0E14;
+    --panel:#131826;
+    --panel-2:#1A2033;
+    --line:#232B40;
+    --text:#E8ECF1;
+    --muted:#8A93A6;
+    --accent:#4FD1C5;
+    --accent-dim:#2A5F5A;
+    --amber:#F2B84B;
+    --danger:#E5484D;
+    --mono:'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+    --sans:'Inter', system-ui, -apple-system, sans-serif;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--sans);height:100%;}
+  body{min-height:100vh; display:flex; flex-direction:column;}
+  button{font-family:inherit; cursor:pointer;}
+
+  header.topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 20px; border-bottom:1px solid var(--line);
+    background:var(--panel);
+  }
+  .brand{
+    font-family:var(--mono); letter-spacing:.12em; font-size:13px; color:var(--muted);
+  }
+  .back-btn{
+    background:none; border:1px solid var(--line); color:var(--text);
+    padding:8px 14px; border-radius:6px; font-size:14px;
+  }
+  .back-btn.hidden{visibility:hidden;}
+  .back-btn:hover{border-color:var(--accent); color:var(--accent);}
+
+  #app{flex:1; display:flex; flex-direction:column;}
+  .screen{display:none; flex:1; flex-direction:column; padding:32px 20px; max-width:720px; margin:0 auto; width:100%;}
+  .screen.active{display:flex;}
+
+  h1{font-size:22px; font-weight:700; margin:0 0 4px;}
+  h2{font-size:18px; font-weight:600; margin:24px 0 10px;}
+  p.lead{color:var(--muted); font-size:14px; line-height:1.7; margin:0 0 24px;}
+
+  /* ---- Menu ---- */
+  #screen-menu h1{text-align:center; margin-bottom:6px;}
+  .subtitle{text-align:center; color:var(--muted); font-size:13px; margin-bottom:36px; font-family:var(--mono); letter-spacing:.08em;}
+  .menu-grid{display:flex; flex-direction:column; gap:14px;}
+  .task-card{
+    background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    padding:22px 24px; text-align:left; display:flex; flex-direction:column; gap:6px;
+    transition:border-color .15s, transform .1s;
+  }
+  .task-card:hover{border-color:var(--accent);}
+  .task-card:active{transform:scale(0.99);}
+  .task-name{font-family:var(--mono); font-size:20px; font-weight:600; letter-spacing:.04em; color:var(--accent);}
+  .task-desc{font-size:13px; color:var(--muted);}
+
+  /* ---- Common instruction / settings block ---- */
+  .form-stack{display:flex; flex-direction:column; gap:18px; max-width:440px;}
+  .field.wide{gap:8px;}
+  .field.wide input, .field.wide select{width:100%; max-width:320px;}
+  .field.wide input[type="range"]{width:260px; max-width:none; padding:0; vertical-align:middle;}
+  .slider-val{font-family:var(--mono); color:var(--accent); margin-left:10px; font-size:14px;}
+  .tlx-item{border:1px solid var(--line); border-radius:8px; padding:16px 18px; margin-bottom:14px; background:var(--panel);}
+  .tlx-item h3{margin:0 0 4px; font-size:15px;}
+  .tlx-item p{margin:0 0 10px; font-size:13px; color:var(--muted); line-height:1.6;}
+  .tlx-slider-row{display:flex; align-items:center; gap:10px;}
+  .tlx-slider-row input[type="range"]{flex:1;}
+  .tlx-endlabel{font-size:11px; color:var(--muted); font-family:var(--mono);}
+  .settings-row{display:flex; gap:16px; flex-wrap:wrap; margin-bottom:22px;}
+  .timebar-wrap{width:100%; max-width:420px;}
+  .timebar-track{width:100%; height:8px; background:var(--panel-2); border-radius:4px; overflow:hidden; border:1px solid var(--line);}
+  .timebar-fill{height:100%; width:0%; background:var(--accent);}
+  .timebar-labels{display:flex; justify-content:space-between; font-family:var(--mono); font-size:12px; color:var(--muted); margin-top:6px;}
+
+  .q-block{margin-bottom:20px;}
+  .q-title{font-size:14px; margin-bottom:8px; line-height:1.6;}
+  .radio-opt, .checkbox-opt{display:inline-flex; align-items:center; gap:6px; margin-right:16px; margin-bottom:6px; font-size:14px; color:var(--text);}
+  .text-input{
+    background:var(--panel-2); border:1px solid var(--line); color:var(--text);
+    padding:8px 10px; border-radius:6px; font-family:var(--sans); font-size:14px; width:100%; max-width:360px;
+  }
+  .detail-input{
+    background:var(--panel-2); border:1px solid var(--line); color:var(--text);
+    padding:6px 8px; border-radius:6px; font-size:13px; margin-top:6px; margin-right:8px; display:none; max-width:220px;
+  }
+  #screen-preq h2{border-top:1px solid var(--line); padding-top:20px; margin-top:26px;}
+  .c-item{background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:14px 16px; margin-bottom:12px;}
+  .c-title{font-size:14px; font-weight:600; margin-bottom:8px;}
+  .c-slider-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+  .c-slider-row input[type="range"]{flex:1; min-width:120px;}
+  .field{display:flex; flex-direction:column; gap:6px;}
+  .field label{font-size:12px; color:var(--muted);}
+  .field input, .field select{
+    background:var(--panel-2); border:1px solid var(--line); color:var(--text);
+    padding:8px 10px; border-radius:6px; font-family:var(--mono); font-size:14px; width:100px;
+  }
+  .primary-btn{
+    background:var(--accent); border:none; color:#062622; font-weight:600;
+    padding:12px 22px; border-radius:8px; font-size:15px; align-self:flex-start;
+  }
+  .primary-btn:hover{filter:brightness(1.08);}
+  .secondary-btn{
+    background:none; border:1px solid var(--line); color:var(--text);
+    padding:10px 18px; border-radius:8px; font-size:14px;
+  }
+  .secondary-btn:hover{border-color:var(--accent); color:var(--accent);}
+  .btn-row{display:flex; gap:12px; margin-top:18px; flex-wrap:wrap;}
+
+  /* ---- Task run area (shared look) ---- */
+  .stage{
+    flex:1; min-height:280px; background:#000; border-radius:12px; border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; position:relative; margin:10px 0 18px;
+    user-select:none; touch-action:manipulation;
+  }
+  .stage .hint{position:absolute; bottom:14px; left:0; right:0; text-align:center; color:var(--muted); font-size:12px;}
+  .readout{font-family:var(--mono); font-size:15vw; max-font-size:64px; color:var(--danger); font-weight:600;}
+  .fixation{font-family:var(--mono); font-size:40px; color:var(--muted);}
+  .stroop-word{font-family:var(--sans); font-size:56px; font-weight:700;}
+  .nback-letter{font-family:var(--mono); font-size:80px; font-weight:600; color:var(--text);}
+  .flash-msg{font-family:var(--mono); font-size:22px; color:var(--amber);}
+
+  .response-row{display:flex; gap:12px; justify-content:center; flex-wrap:wrap;}
+  .color-btn{
+    padding:16px 20px; border-radius:8px; border:1px solid var(--line); font-weight:700; font-size:16px;
+    min-width:88px; background:var(--panel-2); color:var(--text);
+    transition:border-color .15s, transform .1s;
+  }
+  .color-btn:hover{border-color:var(--accent);}
+  .color-btn:active{transform:scale(0.97);}
+  .match-btn{
+    padding:18px 40px; border-radius:10px; border:none; background:var(--accent); color:#062622;
+    font-weight:700; font-size:18px;
+  }
+  .match-btn:active{filter:brightness(0.9);}
+
+  /* ---- Results ---- */
+  .stats-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(130px,1fr)); gap:10px; margin:16px 0 20px;}
+  .stat-box{background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px 14px;}
+  .stat-box .label{font-size:11px; color:var(--muted); margin-bottom:4px;}
+  .stat-box .value{font-family:var(--mono); font-size:20px; font-weight:600; color:var(--accent);}
+  table.trial-table{width:100%; border-collapse:collapse; font-size:12px; font-family:var(--mono); margin-bottom:16px;}
+  table.trial-table th, table.trial-table td{border-bottom:1px solid var(--line); padding:6px 8px; text-align:right;}
+  table.trial-table th{color:var(--muted); font-weight:500;}
+  .table-wrap{max-height:260px; overflow-y:auto; border:1px solid var(--line); border-radius:8px;}
+
+  @media (max-width:480px){
+    .readout{font-size:18vw;}
+    .stroop-word{font-size:40px;}
+    .nback-letter{font-size:64px;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <button id="backBtn" class="back-btn hidden">← メニュー</button>
+    <div class="brand">COGNITIVE BATTERY</div>
+    <div style="width:80px"></div>
+  </header>
+
+  <!-- ================= MENU ================= -->
+  <section id="screen-menu" class="screen active">
+    <h1>認知課題を選択</h1>
+    <div class="subtitle">課題名をクリックして開始</div>
+    <div class="menu-grid">
+      <button class="task-card" data-task="preq">
+        <span class="task-name">実験前アンケート</span>
+        <span class="task-desc">属性・体調・睡眠状況などの事前質問</span>
+      </button>
+      <button class="task-card" data-task="pvt">
+        <span class="task-name">PVT</span>
+        <span class="task-desc">単純反応時間課題（Psychomotor Vigilance Task）</span>
+      </button>
+      <button class="task-card" data-task="stroop">
+        <span class="task-name">STROOP</span>
+        <span class="task-desc">色-単語干渉課題（Stroop Task）</span>
+      </button>
+      <button class="task-card" data-task="nback">
+        <span class="task-name">N-BACK</span>
+        <span class="task-desc">作業記憶課題（N-back Task）</span>
+      </button>
+      <button class="task-card" data-task="tlx">
+        <span class="task-name">NASA-TLX</span>
+        <span class="task-desc">主観的作業負荷評価（課題終了後の振り返り）</span>
+      </button>
+      <button class="task-card" data-task="listen">
+        <span class="task-name">聴取</span>
+        <span class="task-desc">音声ファイルの再生・聴取課題</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ================= 実験前アンケート ================= -->
+  <section id="screen-preq" class="screen">
+    <h1>実験前アンケート（改訂版）</h1>
+    <p class="lead">本アンケートは、実験結果に影響する可能性のある基本属性、生活状況、体調および音環境に関する経験を把握するために実施します。回答は研究目的以外には使用せず、分析時には参加者IDで管理します。</p>
+    <div id="preq-setup" class="form-stack" style="max-width:640px;">
+
+      <div class="q-block">
+        <div class="q-title">参加者ID</div>
+        <input type="text" id="preq-id" class="text-input" placeholder="例：P001">
+      </div>
+
+      <div class="q-block">
+        <div class="q-title">実施回</div>
+        <label class="radio-opt"><input type="radio" name="session" value="1回目" checked> 1回目</label>
+        <label class="radio-opt"><input type="radio" name="session" value="2回目"> 2回目</label>
+      </div>
+
+      <div class="q-block">
+        <div class="q-title">実施日</div>
+        <input type="date" id="preq-date" class="text-input">
+      </div>
+
+      <div class="q-block">
+        <div class="q-title">開始時刻</div>
+        <input type="time" id="preq-starttime" class="text-input">
+      </div>
+
+      <div id="preq-sectionA">
+        <h2>A．初回のみ回答する項目（2回目は記入不要）</h2>
+
+        <div class="q-block">
+          <div class="q-title">1．年齢</div>
+          <input type="number" id="q1" class="text-input" min="0" max="120">
+        </div>
+
+        <div class="q-block">
+          <div class="q-title">2．性別</div>
+          <label class="radio-opt"><input type="radio" name="q2" value="男性"> 男性</label>
+          <label class="radio-opt"><input type="radio" name="q2" value="女性"> 女性</label>
+          <label class="radio-opt"><input type="radio" name="q2" value="その他"> その他</label>
+          <label class="radio-opt"><input type="radio" name="q2" value="回答しない"> 回答しない</label>
+        </div>
+
+        <div class="q-block">
+          <div class="q-title">3．利き手</div>
+          <label class="radio-opt"><input type="radio" name="q3" value="右"> 右</label>
+          <label class="radio-opt"><input type="radio" name="q3" value="左"> 左</label>
+          <label class="radio-opt"><input type="radio" name="q3" value="両方"> 両方</label>
+        </div>
+
+        <div class="q-block">
+          <div class="q-title">4．眼鏡またはコンタクトレンズを使用していますか。</div>
+          <label class="radio-opt"><input type="radio" name="q4" value="使用していない"> 使用していない</label>
+          <label class="radio-opt"><input type="radio" name="q4" value="眼鏡"> 眼鏡</label>
+          <label class="radio-opt"><input type="radio" name="q4" value="コンタクトレンズ"> コンタクトレンズ</label>
+        </div>
+
+        <div class="q-block">
+          <div class="q-title">5．色の識別に困難がありますか、または色覚について指摘を受けたことがありますか。</div>
+          <label class="radio-opt"><input type="radio" name="q5" value="ない"> ない</label>
+          <label class="radio-opt"><input type="radio" name="q5" value="ある"> ある</label>
+          <label class="radio-opt"><input type="radio" name="q5" value="分からない"> 分からない</label>
+        </div>
+
+        <div class="q-block">
+          <div class="q-title">6．聴覚に支障（難聴、耳鳴りなど）がありますか。</div>
+          <label class="radio-opt"><input type="radio" name="q6" value="ない"> ない</label>
+          <label class="radio-opt"><input type="radio" name="q6" value="ある"> ある</label>
+          <input type="text" class="detail-input" id="q6-detail" data-group="q6" data-show-if="ある" placeholder="内容">
+        </div>
+
+        <div class="q-block">
+          <div class="q-title">7．特定の音によって強い不快感や体調不良が生じることがありますか。</div>
+          <label class="radio-opt"><input type="radio" name="q7" value="ない"> ない</label>
+          <label class="radio-opt"><input type="radio" name="q7" value="ある"> ある</label>
+          <input type="text" class="detail-input" id="q7-detail" data-group="q7" data-show-if="ある" placeholder="音の種類">
+        </div>
+
+        <div class="q-block">
+          <div class="q-title">8．睡眠、注意、判断または反応に影響する可能性のある薬を日常的に使用していますか。（薬品名は記入不要です）</div>
+          <label class="radio-opt"><input type="radio" name="q8" value="使用していない"> 使用していない</label>
+          <label class="radio-opt"><input type="radio" name="q8" value="使用している"> 使用している</label>
+          <label class="radio-opt"><input type="radio" name="q8" value="回答しない"> 回答しない</label>
+        </div>
+
+        <div class="q-block">
+          <div class="q-title">9．テトリスの経験について、最も近いものを選んでください。</div>
+          <label class="radio-opt"><input type="radio" name="q9" value="経験なし"> 経験なし</label>
+          <label class="radio-opt"><input type="radio" name="q9" value="数回程度"> 数回程度</label>
+          <label class="radio-opt"><input type="radio" name="q9" value="月1回未満"> 月1回未満</label>
+          <label class="radio-opt"><input type="radio" name="q9" value="月1回以上"> 月1回以上</label>
+          <label class="radio-opt"><input type="radio" name="q9" value="週1回以上"> 週1回以上</label>
+        </div>
+
+        <div class="q-block">
+          <div class="q-title">10．以下の認知課題を経験したことがありますか。（複数選択可）</div>
+          <label class="checkbox-opt"><input type="checkbox" data-cb-group="q10" value="PVT・反応時間課題"> PVT・反応時間課題</label>
+          <label class="checkbox-opt"><input type="checkbox" data-cb-group="q10" value="Stroop課題"> Stroop課題</label>
+          <label class="checkbox-opt"><input type="checkbox" data-cb-group="q10" value="n-back課題"> n-back課題</label>
+          <label class="checkbox-opt"><input type="checkbox" data-cb-group="q10" data-exclusive="true" value="いずれもない"> いずれもない</label>
+        </div>
+
+        <div class="q-block">
+          <div class="q-title">11．普段、自然音（波、雨、川、鳥の声など）を音源として聴く頻度を教えてください。</div>
+          <label class="radio-opt"><input type="radio" name="q11" value="よく聴く"> よく聴く</label>
+          <label class="radio-opt"><input type="radio" name="q11" value="たまに聴く"> たまに聴く</label>
+          <label class="radio-opt"><input type="radio" name="q11" value="ほとんど聴かない"> ほとんど聴かない</label>
+          <label class="radio-opt"><input type="radio" name="q11" value="全く聴かない"> 全く聴かない</label>
+        </div>
+
+        <div class="q-block">
+          <div class="q-title">12．苦手または強い不快感を覚える自然音がありますか。</div>
+          <label class="radio-opt"><input type="radio" name="q12" value="ない"> ない</label>
+          <label class="radio-opt"><input type="radio" name="q12" value="ある"> ある</label>
+          <input type="text" class="detail-input" id="q12-detail" data-group="q12" data-show-if="ある" placeholder="音の種類">
+        </div>
+      </div>
+
+      <h2>B．各実験日に回答する項目（自然音条件・無音条件の両日で回答）</h2>
+
+      <div class="q-block">
+        <div class="q-title">13．昨夜の就寝時刻と本日の起床時刻を記入してください。</div>
+        <input type="text" id="q13" class="text-input" placeholder="例：23時30分就寝／7時00分起床">
+      </div>
+
+      <div class="q-block">
+        <div class="q-title">14．昨夜の睡眠時間を記入してください。</div>
+        <input type="text" id="q14" class="text-input" placeholder="例：7時間30分">
+      </div>
+
+      <div class="q-block">
+        <div class="q-title">15．昨夜の睡眠の質はいかがでしたか。</div>
+        <label class="radio-opt"><input type="radio" name="q15" value="非常に良かった"> 非常に良かった</label>
+        <label class="radio-opt"><input type="radio" name="q15" value="やや良かった"> やや良かった</label>
+        <label class="radio-opt"><input type="radio" name="q15" value="普通"> 普通</label>
+        <label class="radio-opt"><input type="radio" name="q15" value="やや悪かった"> やや悪かった</label>
+        <label class="radio-opt"><input type="radio" name="q15" value="非常に悪かった"> 非常に悪かった</label>
+      </div>
+
+      <div class="q-block">
+        <div class="q-title">16．現在の体調はいかがですか。</div>
+        <label class="radio-opt"><input type="radio" name="q16" value="非常に良い"> 非常に良い</label>
+        <label class="radio-opt"><input type="radio" name="q16" value="やや良い"> やや良い</label>
+        <label class="radio-opt"><input type="radio" name="q16" value="普通"> 普通</label>
+        <label class="radio-opt"><input type="radio" name="q16" value="あまり良くない"> あまり良くない</label>
+        <label class="radio-opt"><input type="radio" name="q16" value="悪い"> 悪い</label>
+      </div>
+
+      <div class="q-block">
+        <div class="q-title">17．本日、カフェインを含む飲料・食品を摂取しましたか。</div>
+        <label class="radio-opt"><input type="radio" name="q17" value="摂取していない"> 摂取していない</label>
+        <label class="radio-opt"><input type="radio" name="q17" value="摂取した"> 摂取した</label>
+        <div>
+          <input type="text" class="detail-input" id="q17-detail" data-group="q17" data-show-if="摂取した" placeholder="種類">
+          <input type="time" class="detail-input" id="q17-time" data-group="q17" data-show-if="摂取した" placeholder="最終摂取">
+        </div>
+      </div>
+
+      <div class="q-block">
+        <div class="q-title">18．本日、エナジードリンクを摂取しましたか。</div>
+        <label class="radio-opt"><input type="radio" name="q18" value="摂取していない"> 摂取していない</label>
+        <label class="radio-opt"><input type="radio" name="q18" value="摂取した"> 摂取した</label>
+        <input type="text" class="detail-input" id="q18-detail" data-group="q18" data-show-if="摂取した" placeholder="商品・量">
+      </div>
+
+      <div class="q-block">
+        <div class="q-title">19．最後に食事をした時刻を記入してください。</div>
+        <input type="text" id="q19" class="text-input" placeholder="例：12時30分">
+      </div>
+
+      <div class="q-block">
+        <div class="q-title">20．前日または本日に飲酒しましたか。</div>
+        <label class="radio-opt"><input type="radio" name="q20" value="していない"> していない</label>
+        <label class="radio-opt"><input type="radio" name="q20" value="した"> した</label>
+        <input type="text" class="detail-input" id="q20-detail" data-group="q20" data-show-if="した" placeholder="最終飲酒時刻（例：7/20 22時頃）">
+      </div>
+
+      <div class="q-block">
+        <div class="q-title">21．本日、喫煙またはニコチン製品を使用しましたか。</div>
+        <label class="radio-opt"><input type="radio" name="q21" value="使用していない"> 使用していない</label>
+        <label class="radio-opt"><input type="radio" name="q21" value="使用した"> 使用した</label>
+        <label class="radio-opt"><input type="radio" name="q21" value="回答しない"> 回答しない</label>
+        <input type="time" class="detail-input" id="q21-detail" data-group="q21" data-show-if="使用した" placeholder="最終使用時刻">
+      </div>
+
+      <div class="q-block">
+        <div class="q-title">22．本日、激しい運動をしましたか。</div>
+        <label class="radio-opt"><input type="radio" name="q22" value="していない"> していない</label>
+        <label class="radio-opt"><input type="radio" name="q22" value="した"> した</label>
+        <input type="time" class="detail-input" id="q22-detail" data-group="q22" data-show-if="した" placeholder="終了時刻">
+      </div>
+
+      <div class="q-block">
+        <div class="q-title">23．実験直前まで、長時間の授業、勉強、ゲーム、運転または集中を要する作業をしていましたか。</div>
+        <label class="radio-opt"><input type="radio" name="q23" value="していない"> していない</label>
+        <label class="radio-opt"><input type="radio" name="q23" value="していた"> していた</label>
+        <input type="text" class="detail-input" id="q23-detail" data-group="q23" data-show-if="していた" placeholder="内容">
+      </div>
+
+      <div class="q-block">
+        <div class="q-title">24．現在、実験参加に支障となる症状がありますか。（複数選択可）</div>
+        <label class="checkbox-opt"><input type="checkbox" data-cb-group="q24" data-exclusive="true" value="ない"> ない</label>
+        <label class="checkbox-opt"><input type="checkbox" data-cb-group="q24" value="頭痛"> 頭痛</label>
+        <label class="checkbox-opt"><input type="checkbox" data-cb-group="q24" value="発熱・風邪症状"> 発熱・風邪症状</label>
+        <label class="checkbox-opt"><input type="checkbox" data-cb-group="q24" value="吐き気・めまい"> 吐き気・めまい</label>
+        <label class="checkbox-opt"><input type="checkbox" data-cb-group="q24" value="強い疲労"> 強い疲労</label>
+        <label class="checkbox-opt"><input type="checkbox" data-cb-group="q24" value="その他"> その他</label>
+        <input type="text" class="detail-input" id="q24-detail" data-group="q24" data-show-if="その他" placeholder="内容">
+      </div>
+
+      <div class="q-block">
+        <div class="q-title">25．前回の実験日と比べて、睡眠、食事、カフェイン、体調などに大きな違いがありますか。</div>
+        <label class="radio-opt"><input type="radio" name="q25" value="初回のため該当しない"> 初回のため該当しない</label>
+        <label class="radio-opt"><input type="radio" name="q25" value="大きな違いはない"> 大きな違いはない</label>
+        <label class="radio-opt"><input type="radio" name="q25" value="違いがある"> 違いがある</label>
+        <input type="text" class="detail-input" id="q25-detail" data-group="q25" data-show-if="違いがある" placeholder="内容">
+      </div>
+
+      <div class="q-block">
+        <div class="q-title">26．本日の実験について説明を理解し、現在も参加に同意しますか。</div>
+        <label class="radio-opt"><input type="radio" name="q26" value="はい"> はい</label>
+        <label class="radio-opt"><input type="radio" name="q26" value="研究者に確認したいことがある"> 研究者に確認したいことがある</label>
+      </div>
+
+      <h2>C．実験開始直前の主観評価（現在の状態に最も近い位置へ）</h2>
+
+      <div class="c-item">
+        <div class="c-title">精神的疲労</div>
+        <div class="c-slider-row">
+          <span class="tlx-endlabel">0（まったく疲れていない）</span>
+          <input type="range" min="0" max="100" step="1" value="50" id="c-mental" oninput="document.getElementById('c-mental-val').textContent=this.value">
+          <span class="tlx-endlabel">100（非常に疲れている）</span>
+          <span class="slider-val" id="c-mental-val">50</span>
+        </div>
+      </div>
+
+      <div class="c-item">
+        <div class="c-title">身体的疲労</div>
+        <div class="c-slider-row">
+          <span class="tlx-endlabel">0（まったく疲れていない）</span>
+          <input type="range" min="0" max="100" step="1" value="50" id="c-physical" oninput="document.getElementById('c-physical-val').textContent=this.value">
+          <span class="tlx-endlabel">100（非常に疲れている）</span>
+          <span class="slider-val" id="c-physical-val">50</span>
+        </div>
+      </div>
+
+      <div class="c-item">
+        <div class="c-title">眠気</div>
+        <div class="c-slider-row">
+          <span class="tlx-endlabel">0（まったく眠くない）</span>
+          <input type="range" min="0" max="100" step="1" value="50" id="c-sleepiness" oninput="document.getElementById('c-sleepiness-val').textContent=this.value">
+          <span class="tlx-endlabel">100（非常に眠い）</span>
+          <span class="slider-val" id="c-sleepiness-val">50</span>
+        </div>
+      </div>
+
+      <div class="c-item">
+        <div class="c-title">集中できる状態</div>
+        <div class="c-slider-row">
+          <span class="tlx-endlabel">0（まったく集中できない）</span>
+          <input type="range" min="0" max="100" step="1" value="50" id="c-focus" oninput="document.getElementById('c-focus-val').textContent=this.value">
+          <span class="tlx-endlabel">100（非常によく集中できる）</span>
+          <span class="slider-val" id="c-focus-val">50</span>
+        </div>
+      </div>
+
+      <div class="c-item">
+        <div class="c-title">ストレス</div>
+        <div class="c-slider-row">
+          <span class="tlx-endlabel">0（まったく感じていない）</span>
+          <input type="range" min="0" max="100" step="1" value="50" id="c-stress" oninput="document.getElementById('c-stress-val').textContent=this.value">
+          <span class="tlx-endlabel">100（非常に強く感じている）</span>
+          <span class="slider-val" id="c-stress-val">50</span>
+        </div>
+      </div>
+
+      <div class="c-item">
+        <div class="c-title">快適さ</div>
+        <div class="c-slider-row">
+          <span class="tlx-endlabel">0（非常に不快）</span>
+          <input type="range" min="0" max="100" step="1" value="50" id="c-comfort" oninput="document.getElementById('c-comfort-val').textContent=this.value">
+          <span class="tlx-endlabel">100（非常に快適）</span>
+          <span class="slider-val" id="c-comfort-val">50</span>
+        </div>
+      </div>
+
+      <h2>研究者記入欄</h2>
+      <div class="q-block">
+        <div class="q-title">実施可否</div>
+        <label class="radio-opt"><input type="radio" name="r-status" value="実施"> 実施</label>
+        <label class="radio-opt"><input type="radio" name="r-status" value="延期"> 延期</label>
+        <label class="radio-opt"><input type="radio" name="r-status" value="中止"> 中止</label>
+      </div>
+      <div class="q-block">
+        <div class="q-title">特記事項</div>
+        <input type="text" id="r-notes" class="text-input">
+      </div>
+
+      <button class="primary-btn" id="preq-submit">回答を送信</button>
+    </div>
+    <div id="preq-result" style="display:none;"></div>
+  </section>
+
+  <!-- ================= PVT ================= -->
+  <section id="screen-pvt" class="screen">
+    <h1>PVT（単純反応時間課題）</h1>
+    <p class="lead">画面が暗いまま少し待つと、赤い数字（カウンター）が表示されます。数字が出たら、できるだけ早く画面をクリック（タップ）してください。数字が出る前にクリックすると「早すぎ」と判定されます。</p>
+    <div id="pvt-setup">
+      <div class="settings-row">
+        <div class="field">
+          <label>試行数</label>
+          <input type="number" id="pvt-trials" value="20" min="5" max="100">
+        </div>
+      </div>
+      <button class="primary-btn" id="pvt-start">開始する</button>
+    </div>
+    <div id="pvt-run" style="display:none; flex:1; flex-direction:column;">
+      <div class="stage" id="pvt-stage">
+        <div class="readout" id="pvt-readout" style="display:none;">0 ms</div>
+        <div class="hint">試行 <span id="pvt-progress">0</span> / <span id="pvt-total">20</span></div>
+      </div>
+    </div>
+    <div id="pvt-result" style="display:none;"></div>
+  </section>
+
+  <!-- ================= STROOP ================= -->
+  <section id="screen-stroop" class="screen">
+    <h1>STROOP（色-単語干渉課題）</h1>
+    <p class="lead">単語の「意味」ではなく、文字が表示されている「インクの色」に対応するボタンをできるだけ早くクリックしてください。</p>
+    <div id="stroop-setup">
+      <div class="settings-row">
+        <div class="field">
+          <label>試行数</label>
+          <input type="number" id="stroop-trials" value="24" min="8" max="120">
+        </div>
+      </div>
+      <button class="primary-btn" id="stroop-start">開始する</button>
+    </div>
+    <div id="stroop-run" style="display:none; flex:1; flex-direction:column;">
+      <div class="stage" id="stroop-stage">
+        <div class="stroop-word" id="stroop-word"></div>
+        <div class="hint">試行 <span id="stroop-progress">0</span> / <span id="stroop-total">24</span></div>
+      </div>
+      <div class="response-row" id="stroop-buttons"></div>
+    </div>
+    <div id="stroop-result" style="display:none;"></div>
+  </section>
+
+  <!-- ================= N-BACK ================= -->
+  <section id="screen-nback" class="screen">
+    <h1>N-BACK（作業記憶課題）</h1>
+    <p class="lead">画面に1文字ずつアルファベットが表示されます。現在の文字が「Nつ前」の文字と同じ場合だけ、MATCHボタンをクリックしてください。異なる場合は何もしないでください。</p>
+    <div id="nback-setup">
+      <div class="settings-row">
+        <div class="field">
+          <label>Nの値</label>
+          <select id="nback-n">
+            <option value="1">1-back</option>
+            <option value="2" selected>2-back</option>
+            <option value="3">3-back</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>試行数</label>
+          <input type="number" id="nback-trials" value="20" min="10" max="100">
+        </div>
+      </div>
+      <button class="primary-btn" id="nback-start">開始する</button>
+    </div>
+    <div id="nback-run" style="display:none; flex:1; flex-direction:column;">
+      <div class="stage" id="nback-stage">
+        <div class="nback-letter" id="nback-letter"></div>
+        <div class="hint">試行 <span id="nback-progress">0</span> / <span id="nback-total">20</span></div>
+      </div>
+      <div class="response-row">
+        <button class="match-btn" id="nback-match">MATCH</button>
+      </div>
+    </div>
+    <div id="nback-result" style="display:none;"></div>
+  </section>
+
+  <!-- ================= NASA-TLX ================= -->
+  <section id="screen-tlx" class="screen">
+    <h1>NASA-TLX（主観的作業負荷評価）</h1>
+    <p class="lead">直前に行った課題を振り返り、以下の6項目についてスライダーで評価してください（0〜100）。</p>
+    <div id="tlx-setup" class="form-stack" style="max-width:560px;">
+      <div id="tlx-items"></div>
+      <button class="primary-btn" id="tlx-submit">回答を送信</button>
+    </div>
+    <div id="tlx-result" style="display:none;"></div>
+  </section>
+
+  <!-- ================= 聴取課題 ================= -->
+  <section id="screen-listen" class="screen">
+    <h1>聴取課題</h1>
+    <p class="lead">音声ファイルを選択してから「聴取を開始する」を押すと再生が始まります。</p>
+    <div id="listen-setup" class="form-stack">
+      <div class="field wide">
+        <label>音声ファイルを選択</label>
+        <input type="file" id="listen-file" accept="audio/*">
+      </div>
+      <button class="primary-btn" id="listen-start" disabled>聴取を開始する</button>
+    </div>
+    <div id="listen-run" style="display:none; flex:1; flex-direction:column;">
+      <div class="stage" id="listen-stage" style="flex-direction:column; gap:22px;">
+        <div class="flash-msg" id="listen-status">再生中</div>
+        <div class="timebar-wrap">
+          <div class="timebar-track"><div class="timebar-fill" id="listen-fill"></div></div>
+          <div class="timebar-labels"><span id="listen-elapsed">0:00</span><span id="listen-duration">0:00</span></div>
+        </div>
+      </div>
+    </div>
+    <audio id="listen-audio" style="display:none;"></audio>
+    <div id="listen-result" style="display:none;"></div>
+  </section>
+</div>
+
+<script>
+/* ============================================================
+   Shared helpers
+   ============================================================ */
+function randInt(min, max){ return Math.floor(Math.random() * (max - min + 1)) + min; }
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function mean(arr){ return arr.length ? arr.reduce((a,b)=>a+b,0) / arr.length : null; }
+function median(arr){
+  if(!arr.length) return null;
+  const s = arr.slice().sort((a,b)=>a-b);
+  const mid = Math.floor(s.length/2);
+  return s.length % 2 ? s[mid] : (s[mid-1] + s[mid]) / 2;
+}
+function fmt(n, digits){
+  if(n === null || n === undefined || isNaN(n)) return '--';
+  return n.toFixed(digits === undefined ? 0 : digits);
+}
+function toCSV(headers, rows){
+  const lines = [headers.join(',')];
+  rows.forEach(r => {
+    lines.push(headers.map(h => (r[h] === null || r[h] === undefined) ? '' : String(r[h])).join(','));
+  });
+  return lines.join('\n');
+}
+function downloadCSV(filename, content){
+  const blob = new Blob(["\uFEFF" + content], {type: 'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ============================================================
+   Screen navigation
+   ============================================================ */
+const backBtn = document.getElementById('backBtn');
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  backBtn.classList.toggle('hidden', id === 'screen-menu');
+}
+document.querySelectorAll('.task-card').forEach(card => {
+  card.addEventListener('click', () => {
+    const task = card.dataset.task;
+    resetTaskView(task);
+    showScreen('screen-' + task);
+  });
+});
+backBtn.addEventListener('click', () => {
+  stopAllTasks();
+  showScreen('screen-menu');
+});
+
+function resetTaskView(task){
+  const setup = document.getElementById(task + '-setup');
+  if(setup){ setup.style.display = task === 'preq' || task === 'tlx' ? 'flex' : 'flex'; setup.style.flexDirection = 'column'; }
+  const run = document.getElementById(task + '-run');
+  if(run) run.style.display = 'none';
+  const result = document.getElementById(task + '-result');
+  if(result){ result.style.display = 'none'; result.innerHTML = ''; }
+  if(task === 'tlx') tlxRenderItems();
+  if(task === 'listen') listenReset();
+  if(task === 'preq') resetPreqForm();
+}
+function stopAllTasks(){
+  pvtStop(); stroopStop(); nbackStop(); listenStop();
+}
+
+/* ============================================================
+   PVT
+   ============================================================ */
+let pvt = { running:false, trials:[], total:20, current:0, waiting:false, active:false,
+            isiTimeout:null, counterInterval:null, stimulusStart:0 };
+
+const pvtStage = document.getElementById('pvt-stage');
+const pvtReadout = document.getElementById('pvt-readout');
+
+document.getElementById('pvt-start').addEventListener('click', () => {
+  pvt.total = parseInt(document.getElementById('pvt-trials').value, 10) || 20;
+  document.getElementById('pvt-total').textContent = pvt.total;
+  document.getElementById('pvt-setup').style.display = 'none';
+  document.getElementById('pvt-run').style.display = 'flex';
+  pvt.trials = []; pvt.current = 0; pvt.running = true;
+  pvtNextTrial();
+});
+
+function pvtNextTrial(){
+  if(!pvt.running) return;
+  if(pvt.current >= pvt.total){ pvtFinish(); return; }
+  document.getElementById('pvt-progress').textContent = pvt.current + 1;
+  pvtReadout.style.display = 'none';
+  pvt.waiting = true; pvt.active = false;
+  const isi = randInt(2000, 8000);
+  pvt.isiTimeout = setTimeout(() => {
+    pvt.waiting = false;
+    pvtShowStimulus();
+  }, isi);
+}
+function pvtShowStimulus(){
+  pvt.active = true;
+  pvt.stimulusStart = performance.now();
+  pvtReadout.style.display = 'block';
+  pvtReadout.textContent = '0 ms';
+  pvt.counterInterval = setInterval(() => {
+    const elapsed = performance.now() - pvt.stimulusStart;
+    if(elapsed > 10000){
+      clearInterval(pvt.counterInterval);
+      pvt.active = false;
+      pvt.trials.push({trial: pvt.current + 1, isi_ms: null, rt_ms: null, type: 'miss'});
+      pvt.current++;
+      pvtNextTrial();
+      return;
+    }
+    pvtReadout.textContent = Math.floor(elapsed) + ' ms';
+  }, 20);
+}
+pvtStage.addEventListener('pointerdown', () => {
+  if(!pvt.running) return;
+  if(pvt.waiting){
+    clearTimeout(pvt.isiTimeout);
+    pvt.waiting = false;
+    pvt.trials.push({trial: pvt.current + 1, isi_ms: null, rt_ms: null, type: 'false_start'});
+    pvtReadout.style.display = 'block';
+    pvtReadout.textContent = '早すぎます';
+    pvt.current++;
+    setTimeout(pvtNextTrial, 900);
+  } else if(pvt.active){
+    clearInterval(pvt.counterInterval);
+    const rt = performance.now() - pvt.stimulusStart;
+    pvt.active = false;
+    pvt.trials.push({trial: pvt.current + 1, isi_ms: null, rt_ms: Math.round(rt), type: 'response'});
+    pvtReadout.textContent = Math.round(rt) + ' ms';
+    pvt.current++;
+    setTimeout(pvtNextTrial, 700);
+  }
+});
+function pvtStop(){
+  pvt.running = false;
+  clearTimeout(pvt.isiTimeout);
+  clearInterval(pvt.counterInterval);
+}
+function pvtFinish(){
+  pvt.running = false;
+  document.getElementById('pvt-run').style.display = 'none';
+  const responses = pvt.trials.filter(t => t.type === 'response').map(t => t.rt_ms);
+  const lapses = responses.filter(rt => rt > 500).length;
+  const falseStarts = pvt.trials.filter(t => t.type === 'false_start').length;
+  const misses = pvt.trials.filter(t => t.type === 'miss').length;
+  const box = document.getElementById('pvt-result');
+  box.style.display = 'block';
+  box.innerHTML = `
+    <h2>結果</h2>
+    <div class="stats-grid">
+      <div class="stat-box"><div class="label">平均RT</div><div class="value">${fmt(mean(responses))} ms</div></div>
+      <div class="stat-box"><div class="label">中央値RT</div><div class="value">${fmt(median(responses))} ms</div></div>
+      <div class="stat-box"><div class="label">最速RT</div><div class="value">${responses.length ? Math.min(...responses) : '--'} ms</div></div>
+      <div class="stat-box"><div class="label">最遅RT</div><div class="value">${responses.length ? Math.max(...responses) : '--'} ms</div></div>
+      <div class="stat-box"><div class="label">Lapse数(>500ms)</div><div class="value">${lapses}</div></div>
+      <div class="stat-box"><div class="label">早すぎ回数</div><div class="value">${falseStarts}</div></div>
+      <div class="stat-box"><div class="label">無反応数</div><div class="value">${misses}</div></div>
+    </div>
+    <div class="table-wrap"><table class="trial-table">
+      <thead><tr><th>試行</th><th>種別</th><th>RT(ms)</th></tr></thead>
+      <tbody>${pvt.trials.map(t => `<tr><td>${t.trial}</td><td>${t.type}</td><td>${(t.rt_ms === null || t.rt_ms === undefined) ? '--' : t.rt_ms}</td></tr>`).join('')}</tbody>
+    </table></div>
+    <div class="btn-row">
+      <button class="secondary-btn" id="pvt-csv">CSVダウンロード</button>
+      <button class="secondary-btn" id="pvt-retry">もう一度</button>
+    </div>
+  `;
+  document.getElementById('pvt-csv').addEventListener('click', () => {
+    downloadCSV('pvt_results.csv', toCSV(['trial','isi_ms','rt_ms','type'], pvt.trials));
+  });
+  document.getElementById('pvt-retry').addEventListener('click', () => resetTaskView('pvt'));
+}
+
+/* ============================================================
+   STROOP
+   ============================================================ */
+const STROOP_COLORS = [
+  {name:'赤', hex:'#e5484d'},
+  {name:'青', hex:'#3b82f6'},
+  {name:'緑', hex:'#22c55e'},
+  {name:'黄', hex:'#eab308'}
+];
+let stroop = { running:false, trials:[], total:24, current:0, sequence:[], trialStart:0, awaiting:false };
+
+document.getElementById('stroop-start').addEventListener('click', () => {
+  stroop.total = parseInt(document.getElementById('stroop-trials').value, 10) || 24;
+  document.getElementById('stroop-total').textContent = stroop.total;
+  document.getElementById('stroop-setup').style.display = 'none';
+  document.getElementById('stroop-run').style.display = 'flex';
+  stroop.sequence = [];
+  for(let i = 0; i < stroop.total; i++){
+    const word = STROOP_COLORS[randInt(0, 3)];
+    const ink = STROOP_COLORS[randInt(0, 3)];
+    stroop.sequence.push({word: word.name, ink: ink.name, hex: ink.hex, congruent: word.name === ink.name});
+  }
+  stroop.trials = []; stroop.current = 0; stroop.running = true;
+  stroopRenderButtons();
+  stroopNextTrial();
+});
+function stroopRenderButtons(){
+  const btnRow = document.getElementById('stroop-buttons');
+  btnRow.innerHTML = '';
+  STROOP_COLORS.forEach(c => {
+    const b = document.createElement('button');
+    b.className = 'color-btn';
+    b.textContent = c.name;
+    b.dataset.color = c.name;
+    b.addEventListener('pointerdown', () => stroopRespond(c.name));
+    btnRow.appendChild(b);
+  });
+}
+function stroopNextTrial(){
+  if(!stroop.running) return;
+  if(stroop.current >= stroop.total){ stroopFinish(); return; }
+  document.getElementById('stroop-progress').textContent = stroop.current + 1;
+  const wordEl = document.getElementById('stroop-word');
+  wordEl.textContent = '';
+  setTimeout(() => {
+    if(!stroop.running) return;
+    const item = stroop.sequence[stroop.current];
+    wordEl.textContent = item.word;
+    wordEl.style.color = item.hex;
+    stroop.trialStart = performance.now();
+    stroop.awaiting = true;
+  }, 500);
+}
+function stroopRespond(chosenColor){
+  if(!stroop.running || !stroop.awaiting) return;
+  stroop.awaiting = false;
+  const rt = performance.now() - stroop.trialStart;
+  const item = stroop.sequence[stroop.current];
+  stroop.trials.push({
+    trial: stroop.current + 1, word: item.word, ink: item.ink,
+    congruent: item.congruent, response: chosenColor,
+    correct: chosenColor === item.ink, rt_ms: Math.round(rt)
+  });
+  document.getElementById('stroop-word').textContent = '';
+  stroop.current++;
+  stroopNextTrial();
+}
+function stroopStop(){ stroop.running = false; stroop.awaiting = false; }
+function stroopFinish(){
+  stroop.running = false;
+  document.getElementById('stroop-run').style.display = 'none';
+  const correct = stroop.trials.filter(t => t.correct);
+  const congruentRT = correct.filter(t => t.congruent).map(t => t.rt_ms);
+  const incongruentRT = correct.filter(t => !t.congruent).map(t => t.rt_ms);
+  const accuracy = stroop.trials.length ? (correct.length / stroop.trials.length * 100) : 0;
+  const stroopEffect = (mean(incongruentRT) !== null && mean(congruentRT) !== null)
+    ? mean(incongruentRT) - mean(congruentRT) : null;
+  const box = document.getElementById('stroop-result');
+  box.style.display = 'block';
+  box.innerHTML = `
+    <h2>結果</h2>
+    <div class="stats-grid">
+      <div class="stat-box"><div class="label">正答率</div><div class="value">${fmt(accuracy,1)} %</div></div>
+      <div class="stat-box"><div class="label">一致条件RT</div><div class="value">${fmt(mean(congruentRT))} ms</div></div>
+      <div class="stat-box"><div class="label">不一致条件RT</div><div class="value">${fmt(mean(incongruentRT))} ms</div></div>
+      <div class="stat-box"><div class="label">Stroop効果</div><div class="value">${stroopEffect === null ? '--' : fmt(stroopEffect)} ms</div></div>
+    </div>
+    <div class="table-wrap"><table class="trial-table">
+      <thead><tr><th>試行</th><th>単語</th><th>インク色</th><th>一致</th><th>回答</th><th>正誤</th><th>RT(ms)</th></tr></thead>
+      <tbody>${stroop.trials.map(t => `<tr><td>${t.trial}</td><td>${t.word}</td><td>${t.ink}</td><td>${t.congruent ? '○' : '×'}</td><td>${t.response}</td><td>${t.correct ? '○' : '×'}</td><td>${t.rt_ms}</td></tr>`).join('')}</tbody>
+    </table></div>
+    <div class="btn-row">
+      <button class="secondary-btn" id="stroop-csv">CSVダウンロード</button>
+      <button class="secondary-btn" id="stroop-retry">もう一度</button>
+    </div>
+  `;
+  document.getElementById('stroop-csv').addEventListener('click', () => {
+    downloadCSV('stroop_results.csv', toCSV(['trial','word','ink','congruent','response','correct','rt_ms'], stroop.trials));
+  });
+  document.getElementById('stroop-retry').addEventListener('click', () => resetTaskView('stroop'));
+}
+
+/* ============================================================
+   N-BACK
+   ============================================================ */
+const NBACK_LETTERS = ['C','H','K','L','Q','R','S','T','W'];
+let nback = { running:false, trials:[], total:20, n:2, sequence:[], current:0,
+              trialStart:0, responded:false, timeouts:[] };
+
+document.getElementById('nback-start').addEventListener('click', () => {
+  nback.n = parseInt(document.getElementById('nback-n').value, 10);
+  nback.total = parseInt(document.getElementById('nback-trials').value, 10) || 20;
+  document.getElementById('nback-total').textContent = nback.total;
+  document.getElementById('nback-setup').style.display = 'none';
+  document.getElementById('nback-run').style.display = 'flex';
+
+  nback.sequence = [];
+  for(let i = 0; i < nback.total; i++){
+    if(i >= nback.n && Math.random() < 0.3){
+      nback.sequence.push(nback.sequence[i - nback.n]);
+    } else {
+      let letter;
+      do { letter = NBACK_LETTERS[randInt(0, NBACK_LETTERS.length - 1)]; }
+      while(i >= nback.n && letter === nback.sequence[i - nback.n]);
+      nback.sequence.push(letter);
+    }
+  }
+  nback.trials = []; nback.current = 0; nback.running = true;
+  nbackNextTrial();
+});
+function nbackNextTrial(){
+  if(!nback.running) return;
+  if(nback.current >= nback.total){ nbackFinish(); return; }
+  document.getElementById('nback-progress').textContent = nback.current + 1;
+  const letterEl = document.getElementById('nback-letter');
+  const letter = nback.sequence[nback.current];
+  letterEl.textContent = letter;
+  nback.responded = false;
+  nback.trialStart = performance.now();
+
+  const stimTimeout = setTimeout(() => { letterEl.textContent = ''; }, 500);
+  const endTimeout = setTimeout(() => { nbackEvaluateTrial(); }, 2000);
+  nback.timeouts = [stimTimeout, endTimeout];
+}
+function nbackEvaluateTrial(){
+  if(!nback.running) return;
+  const i = nback.current;
+  const isTarget = i >= nback.n && nback.sequence[i] === nback.sequence[i - nback.n];
+  let outcome;
+  if(isTarget && nback.responded) outcome = 'hit';
+  else if(isTarget && !nback.responded) outcome = 'miss';
+  else if(!isTarget && nback.responded) outcome = 'false_alarm';
+  else outcome = 'correct_rejection';
+  nback.trials.push({
+    trial: i + 1, letter: nback.sequence[i], is_target: isTarget,
+    responded: nback.responded, rt_ms: nback.responded ? nback.lastRT : null, outcome
+  });
+  nback.current++;
+  nbackNextTrial();
+}
+document.getElementById('nback-match').addEventListener('pointerdown', () => {
+  if(!nback.running || nback.responded) return;
+  nback.responded = true;
+  nback.lastRT = Math.round(performance.now() - nback.trialStart);
+});
+function nbackStop(){
+  nback.running = false;
+  nback.timeouts.forEach(t => clearTimeout(t));
+}
+function nbackFinish(){
+  nback.running = false;
+  document.getElementById('nback-run').style.display = 'none';
+  const hits = nback.trials.filter(t => t.outcome === 'hit');
+  const misses = nback.trials.filter(t => t.outcome === 'miss').length;
+  const falseAlarms = nback.trials.filter(t => t.outcome === 'false_alarm').length;
+  const correctRej = nback.trials.filter(t => t.outcome === 'correct_rejection').length;
+  const targets = hits.length + misses;
+  const nonTargets = falseAlarms + correctRej;
+  const hitRate = targets ? hits.length / targets : null;
+  const faRate = nonTargets ? falseAlarms / nonTargets : null;
+  const hitRT = hits.map(t => t.rt_ms);
+  const box = document.getElementById('nback-result');
+  box.style.display = 'block';
+  box.innerHTML = `
+    <h2>結果（${nback.n}-back）</h2>
+    <div class="stats-grid">
+      <div class="stat-box"><div class="label">Hit率</div><div class="value">${hitRate === null ? '--' : fmt(hitRate*100,1)+'%'}</div></div>
+      <div class="stat-box"><div class="label">False Alarm率</div><div class="value">${faRate === null ? '--' : fmt(faRate*100,1)+'%'}</div></div>
+      <div class="stat-box"><div class="label">Hit</div><div class="value">${hits.length}</div></div>
+      <div class="stat-box"><div class="label">Miss</div><div class="value">${misses}</div></div>
+      <div class="stat-box"><div class="label">False Alarm</div><div class="value">${falseAlarms}</div></div>
+      <div class="stat-box"><div class="label">平均RT(Hit)</div><div class="value">${fmt(mean(hitRT))} ms</div></div>
+    </div>
+    <div class="table-wrap"><table class="trial-table">
+      <thead><tr><th>試行</th><th>文字</th><th>ターゲット</th><th>反応</th><th>判定</th><th>RT(ms)</th></tr></thead>
+      <tbody>${nback.trials.map(t => `<tr><td>${t.trial}</td><td>${t.letter}</td><td>${t.is_target ? '○' : '×'}</td><td>${t.responded ? '○' : '×'}</td><td>${t.outcome}</td><td>${(t.rt_ms === null || t.rt_ms === undefined) ? '--' : t.rt_ms}</td></tr>`).join('')}</tbody>
+    </table></div>
+    <div class="btn-row">
+      <button class="secondary-btn" id="nback-csv">CSVダウンロード</button>
+      <button class="secondary-btn" id="nback-retry">もう一度</button>
+    </div>
+  `;
+  document.getElementById('nback-csv').addEventListener('click', () => {
+    downloadCSV('nback_results.csv', toCSV(['trial','letter','is_target','responded','rt_ms','outcome'], nback.trials));
+  });
+  document.getElementById('nback-retry').addEventListener('click', () => resetTaskView('nback'));
+}
+
+/* ============================================================
+   実験前アンケート (Pre-experiment questionnaire)
+   ============================================================ */
+
+// Generic delegated handling for radio-triggered detail inputs and
+// mutually-exclusive checkbox groups (e.g. "いずれもない" / "ない").
+document.addEventListener('change', (e) => {
+  if(e.target.type === 'radio' && e.target.name){
+    const group = e.target.name;
+    document.querySelectorAll(`.detail-input[data-group="${group}"]`).forEach(inp => {
+      inp.style.display = (inp.dataset.showIf === e.target.value) ? 'inline-block' : 'none';
+    });
+  }
+  if(e.target.type === 'checkbox' && e.target.dataset.cbGroup){
+    const group = e.target.dataset.cbGroup;
+    const all = document.querySelectorAll(`input[type="checkbox"][data-cb-group="${group}"]`);
+    if(e.target.dataset.exclusive === 'true' && e.target.checked){
+      all.forEach(cb => { if(cb !== e.target) cb.checked = false; });
+    } else if(e.target.checked){
+      all.forEach(cb => { if(cb.dataset.exclusive === 'true') cb.checked = false; });
+    }
+  }
+  if(e.target.name === 'session') updatePreqSectionAVisibility();
+});
+function updatePreqSectionAVisibility(){
+  const checked = document.querySelector('input[name="session"]:checked');
+  document.getElementById('preq-sectionA').style.display = (checked && checked.value === '2回目') ? 'none' : 'block';
+}
+function resetPreqForm(){
+  document.querySelectorAll('#preq-setup input[type="radio"]').forEach(r => r.checked = false);
+  document.querySelector('input[name="session"][value="1回目"]').checked = true;
+  document.querySelectorAll('#preq-setup input[type="checkbox"]').forEach(c => c.checked = false);
+  document.querySelectorAll('#preq-setup input[type="text"], #preq-setup input[type="date"], #preq-setup input[type="time"], #preq-setup input[type="number"]').forEach(i => { i.value = ''; });
+  document.querySelectorAll('#preq-setup .detail-input').forEach(i => { i.style.display = 'none'; });
+  document.querySelectorAll('#preq-setup input[type="range"]').forEach(s => {
+    s.value = 50;
+    const valEl = document.getElementById(s.id + '-val');
+    if(valEl) valEl.textContent = 50;
+  });
+  updatePreqSectionAVisibility();
+}
+function preqRadio(name){ const el = document.querySelector(`input[name="${name}"]:checked`); return el ? el.value : ''; }
+function preqCheckbox(group){ return Array.from(document.querySelectorAll(`input[type="checkbox"][data-cb-group="${group}"]:checked`)).map(c => c.value).join('; '); }
+function preqVal(id){ const el = document.getElementById(id); return el ? el.value : ''; }
+
+const PREQ_LABELS = {
+  participant_id:'参加者ID', session:'実施回', date:'実施日', start_time:'開始時刻',
+  q1:'1.年齢', q2:'2.性別', q3:'3.利き手', q4:'4.眼鏡/コンタクト', q5:'5.色識別の困難',
+  q6:'6.聴覚の支障', q6_detail:'6.内容', q7:'7.特定音の不快感', q7_detail:'7.音の種類',
+  q8:'8.薬の使用', q9:'9.テトリス経験', q10:'10.認知課題の経験', q11:'11.自然音を聴く頻度',
+  q12:'12.苦手な自然音', q12_detail:'12.音の種類',
+  q13:'13.就寝/起床時刻', q14:'14.睡眠時間', q15:'15.睡眠の質', q16:'16.現在の体調',
+  q17:'17.カフェイン摂取', q17_detail:'17.種類', q17_time:'17.最終摂取時刻',
+  q18:'18.エナジードリンク', q18_detail:'18.商品・量', q19:'19.最後の食事時刻',
+  q20:'20.飲酒', q20_detail:'20.最終飲酒時刻', q21:'21.喫煙/ニコチン', q21_detail:'21.最終使用時刻',
+  q22:'22.激しい運動', q22_detail:'22.終了時刻', q23:'23.直前の集中作業', q23_detail:'23.内容',
+  q24:'24.支障となる症状', q24_detail:'24.内容', q25:'25.前回との違い', q25_detail:'25.内容',
+  q26:'26.説明理解と同意',
+  c_mental:'C.精神的疲労(0-100)', c_physical:'C.身体的疲労(0-100)', c_sleepiness:'C.眠気(0-100)',
+  c_focus:'C.集中できる状態(0-100)', c_stress:'C.ストレス(0-100)', c_comfort:'C.快適さ(0-100)',
+  researcher_status:'研究者記入：実施可否', researcher_notes:'研究者記入：特記事項',
+  timestamp:'回答日時'
+};
+
+document.getElementById('preq-submit').addEventListener('click', () => {
+  const answers = {
+    participant_id: preqVal('preq-id'),
+    session: preqRadio('session'),
+    date: preqVal('preq-date'),
+    start_time: preqVal('preq-starttime'),
+    q1: preqVal('q1'), q2: preqRadio('q2'), q3: preqRadio('q3'), q4: preqRadio('q4'), q5: preqRadio('q5'),
+    q6: preqRadio('q6'), q6_detail: preqVal('q6-detail'),
+    q7: preqRadio('q7'), q7_detail: preqVal('q7-detail'),
+    q8: preqRadio('q8'), q9: preqRadio('q9'), q10: preqCheckbox('q10'), q11: preqRadio('q11'),
+    q12: preqRadio('q12'), q12_detail: preqVal('q12-detail'),
+    q13: preqVal('q13'), q14: preqVal('q14'), q15: preqRadio('q15'), q16: preqRadio('q16'),
+    q17: preqRadio('q17'), q17_detail: preqVal('q17-detail'), q17_time: preqVal('q17-time'),
+    q18: preqRadio('q18'), q18_detail: preqVal('q18-detail'), q19: preqVal('q19'),
+    q20: preqRadio('q20'), q20_detail: preqVal('q20-detail'),
+    q21: preqRadio('q21'), q21_detail: preqVal('q21-detail'),
+    q22: preqRadio('q22'), q22_detail: preqVal('q22-detail'),
+    q23: preqRadio('q23'), q23_detail: preqVal('q23-detail'),
+    q24: preqCheckbox('q24'), q24_detail: preqVal('q24-detail'),
+    q25: preqRadio('q25'), q25_detail: preqVal('q25-detail'),
+    q26: preqRadio('q26'),
+    c_mental: preqVal('c-mental'), c_physical: preqVal('c-physical'), c_sleepiness: preqVal('c-sleepiness'),
+    c_focus: preqVal('c-focus'), c_stress: preqVal('c-stress'), c_comfort: preqVal('c-comfort'),
+    researcher_status: preqRadio('r-status'), researcher_notes: preqVal('r-notes'),
+    timestamp: new Date().toISOString()
+  };
+  document.getElementById('preq-setup').style.display = 'none';
+  const box = document.getElementById('preq-result');
+  box.style.display = 'block';
+  box.innerHTML = `
+    <h2>回答内容</h2>
+    <div class="table-wrap"><table class="trial-table">
+      <tbody>${Object.keys(PREQ_LABELS).map(k => `<tr><th style="text-align:left">${PREQ_LABELS[k]}</th><td>${answers[k] || ''}</td></tr>`).join('')}</tbody>
+    </table></div>
+    <div class="btn-row">
+      <button class="secondary-btn" id="preq-csv">CSVダウンロード</button>
+      <button class="secondary-btn" id="preq-retry">もう一度回答する</button>
+    </div>
+  `;
+  document.getElementById('preq-csv').addEventListener('click', () => {
+    downloadCSV('pre_questionnaire.csv', toCSV(Object.keys(PREQ_LABELS), [answers]));
+  });
+  document.getElementById('preq-retry').addEventListener('click', () => resetTaskView('preq'));
+});
+
+/* ============================================================
+   NASA-TLX
+   ============================================================ */
+const TLX_ITEMS = [
+  {id:'mental', title:'精神的要求 (Mental Demand)', desc:'考える・決める・計算する・記憶する・見る・探すなど、課題はどの程度の知的・知覚的活動を必要としましたか？', low:'低い', high:'高い'},
+  {id:'physical', title:'身体的要求 (Physical Demand)', desc:'押す・引く・操作する・動き回るなど、課題はどの程度の身体的活動を必要としましたか？', low:'低い', high:'高い'},
+  {id:'temporal', title:'時間的切迫感 (Temporal Demand)', desc:'課題の進むペースや速さのために、どの程度時間に追われている感覚がありましたか？', low:'低い', high:'高い'},
+  {id:'performance', title:'遂行水準 (Performance)', desc:'課題の目標をどの程度達成できたと思いますか？（左＝良い、右＝悪い）', low:'良い', high:'悪い'},
+  {id:'effort', title:'努力 (Effort)', desc:'その達成度を得るために、精神的・身体的にどの程度努力する必要がありましたか？', low:'低い', high:'高い'},
+  {id:'frustration', title:'フラストレーション (Frustration)', desc:'課題中に、不安・落胆・いらいら・ストレス・悩みなどをどの程度感じましたか？', low:'低い', high:'高い'}
+];
+function tlxRenderItems(){
+  const wrap = document.getElementById('tlx-items');
+  wrap.innerHTML = TLX_ITEMS.map(item => `
+    <div class="tlx-item">
+      <h3>${item.title}</h3>
+      <p>${item.desc}</p>
+      <div class="tlx-slider-row">
+        <span class="tlx-endlabel">${item.low}</span>
+        <input type="range" min="0" max="100" step="5" value="50" id="tlx-${item.id}"
+               oninput="document.getElementById('tlx-${item.id}-val').textContent=this.value">
+        <span class="tlx-endlabel">${item.high}</span>
+        <span class="slider-val" id="tlx-${item.id}-val">50</span>
+      </div>
+    </div>
+  `).join('');
+}
+document.getElementById('tlx-submit').addEventListener('click', () => {
+  const scores = {};
+  TLX_ITEMS.forEach(item => { scores[item.id] = parseInt(document.getElementById('tlx-' + item.id).value, 10); });
+  const overall = mean(Object.values(scores));
+  document.getElementById('tlx-setup').style.display = 'none';
+  const box = document.getElementById('tlx-result');
+  box.style.display = 'block';
+  box.innerHTML = `
+    <h2>結果</h2>
+    <div class="stats-grid">
+      ${TLX_ITEMS.map(item => `<div class="stat-box"><div class="label">${item.title.split(' ')[0]}</div><div class="value">${scores[item.id]}</div></div>`).join('')}
+      <div class="stat-box"><div class="label">総合スコア（平均）</div><div class="value">${fmt(overall,1)}</div></div>
+    </div>
+    <div class="btn-row">
+      <button class="secondary-btn" id="tlx-csv">CSVダウンロード</button>
+      <button class="secondary-btn" id="tlx-retry">もう一度回答する</button>
+    </div>
+  `;
+  document.getElementById('tlx-csv').addEventListener('click', () => {
+    const row = Object.assign({overall_score: fmt(overall,1)}, scores);
+    downloadCSV('nasa_tlx_results.csv', toCSV(Object.keys(row), [row]));
+  });
+  document.getElementById('tlx-retry').addEventListener('click', () => resetTaskView('tlx'));
+});
+
+/* ============================================================
+   聴取課題 (Audio listening task)
+   ============================================================ */
+const listenAudio = document.getElementById('listen-audio');
+const listenFileInput = document.getElementById('listen-file');
+const listenStartBtn = document.getElementById('listen-start');
+let listen = { fileName:'', objectUrl:null, startedAt:null };
+
+function fmtTime(sec){
+  if(!isFinite(sec) || sec === null) return '0:00';
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return m + ':' + String(s).padStart(2, '0');
+}
+listenFileInput.addEventListener('change', () => {
+  const file = listenFileInput.files[0];
+  if(!file) { listenStartBtn.disabled = true; return; }
+  if(listen.objectUrl) URL.revokeObjectURL(listen.objectUrl);
+  listen.fileName = file.name;
+  listen.objectUrl = URL.createObjectURL(file);
+  listenAudio.src = listen.objectUrl;
+  listenStartBtn.disabled = false;
+});
+listenStartBtn.addEventListener('click', () => {
+  document.getElementById('listen-setup').style.display = 'none';
+  document.getElementById('listen-run').style.display = 'flex';
+  document.getElementById('listen-status').textContent = '再生中';
+  document.getElementById('listen-fill').style.width = '0%';
+  listen.startedAt = new Date().toISOString();
+  listenAudio.currentTime = 0;
+  listenAudio.play();
+});
+listenAudio.addEventListener('timeupdate', () => {
+  if(!listenAudio.duration) return;
+  const pct = (listenAudio.currentTime / listenAudio.duration) * 100;
+  document.getElementById('listen-fill').style.width = pct + '%';
+  document.getElementById('listen-elapsed').textContent = fmtTime(listenAudio.currentTime);
+  document.getElementById('listen-duration').textContent = fmtTime(listenAudio.duration);
+});
+listenAudio.addEventListener('ended', () => {
+  document.getElementById('listen-status').textContent = '再生終了';
+  listenFinish();
+});
+function listenStop(){
+  if(!listenAudio.paused) listenAudio.pause();
+}
+function listenReset(){
+  listenAudio.pause();
+  listenAudio.currentTime = 0;
+  listenFileInput.value = '';
+  listenStartBtn.disabled = true;
+  document.getElementById('listen-fill').style.width = '0%';
+  document.getElementById('listen-elapsed').textContent = '0:00';
+  document.getElementById('listen-duration').textContent = '0:00';
+}
+function listenFinish(){
+  document.getElementById('listen-run').style.display = 'none';
+  const box = document.getElementById('listen-result');
+  box.style.display = 'block';
+  const durationSec = listenAudio.duration || 0;
+  box.innerHTML = `
+    <h2>聴取結果</h2>
+    <div class="stats-grid">
+      <div class="stat-box"><div class="label">ファイル名</div><div class="value" style="font-size:14px;">${listen.fileName}</div></div>
+      <div class="stat-box"><div class="label">再生時間</div><div class="value">${fmtTime(durationSec)}</div></div>
+      <div class="stat-box"><div class="label">開始時刻</div><div class="value" style="font-size:13px;">${listen.startedAt}</div></div>
+    </div>
+    <div class="btn-row">
+      <button class="secondary-btn" id="listen-csv">CSVダウンロード</button>
+      <button class="secondary-btn" id="listen-retry">もう一度聴取する</button>
+    </div>
+  `;
+  document.getElementById('listen-csv').addEventListener('click', () => {
+    downloadCSV('listen_results.csv', toCSV(
+      ['file_name','duration_sec','started_at'],
+      [{file_name: listen.fileName, duration_sec: fmt(durationSec,2), started_at: listen.startedAt}]
+    ));
+  });
+  document.getElementById('listen-retry').addEventListener('click', () => resetTaskView('listen'));
+}
+</script>
+</body>
+</html>
